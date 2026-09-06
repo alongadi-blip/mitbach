@@ -148,7 +148,7 @@ export function MenuBoard({
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="size-9 shrink-0 cursor-pointer text-muted-foreground hover:text-destructive"
+                        className="shrink-0 cursor-pointer text-muted-foreground hover:text-destructive"
                         disabled={busyId === item.id}
                         onClick={() => void removeItem(item)}
                       >

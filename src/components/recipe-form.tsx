@@ -305,7 +305,7 @@ export function RecipeForm({
                   type="button"
                   variant="ghost"
                   size="icon"
-                  className="size-10 cursor-pointer text-muted-foreground"
+                  className="cursor-pointer text-muted-foreground"
                   onClick={() =>
                     set(
                       'ingredients',
@@ -322,7 +322,7 @@ export function RecipeForm({
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="size-10 cursor-pointer text-muted-foreground sm:hidden"
+                    className="cursor-pointer text-muted-foreground sm:hidden"
                     onClick={() => moveIngredient(index, -1)}
                   >
                     <GripVertical aria-hidden />
@@ -370,7 +370,7 @@ export function RecipeForm({
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="mt-1 size-10 shrink-0 cursor-pointer text-muted-foreground"
+                className="mt-1 shrink-0 cursor-pointer text-muted-foreground"
                 onClick={() =>
                   set(
                     'instructions',

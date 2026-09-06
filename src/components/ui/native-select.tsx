@@ -20,7 +20,7 @@ export function NativeSelect({
       <select
         data-slot="native-select"
         className={cn(
-          'h-10 w-full cursor-pointer appearance-none rounded-lg border border-input bg-transparent ps-3 pe-9 text-sm text-foreground shadow-xs transition-[color,box-shadow] outline-none',
+          'h-11 md:h-10 w-full cursor-pointer appearance-none rounded-lg border border-input bg-transparent ps-3 pe-9 text-sm text-foreground shadow-xs transition-[color,box-shadow] outline-none',
           'focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50',
           'disabled:cursor-not-allowed disabled:opacity-50',
           'aria-invalid:border-destructive aria-invalid:ring-destructive/20',

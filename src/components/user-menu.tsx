@@ -36,7 +36,7 @@ export function UserMenu({ name, email }: { name: string; email: string }) {
     <DropdownMenu>
       <DropdownMenuTrigger
         render={
-          <Button variant="ghost" size="icon" className="size-10 cursor-pointer rounded-full">
+          <Button variant="ghost" size="icon" className="cursor-pointer rounded-full">
             <span className="sr-only">תפריט משתמש</span>
             <Avatar className="size-9">
               <AvatarFallback className="bg-secondary text-sm font-semibold text-secondary-foreground">

@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "db:push": "supabase db push",
     "db:types": "supabase gen types typescript --linked > src/lib/types.generated.ts",
-    "invite": "node --env-file=.env.local scripts/create-invite.mjs"
+    "invite": "node --env-file=.env.local scripts/create-invite.mjs",
+    "check:contrast": "node scripts/check-contrast.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.124.0",

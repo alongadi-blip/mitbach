@@ -117,7 +117,7 @@ export function MemberRow({
         {viewerIsAdmin && !isOwner ? (
           <NativeSelect
             aria-label={`הרשאה עבור ${member.name}`}
-            className="h-9 w-32"
+            className="w-32"
             value={role}
             disabled={pending}
             onChange={(event) => void changeRole(event.target.value as GroupRole)}
@@ -136,7 +136,7 @@ export function MemberRow({
           <Button
             variant="ghost"
             size="icon"
-            className="size-9 cursor-pointer text-muted-foreground hover:text-destructive"
+            className="cursor-pointer text-muted-foreground hover:text-destructive"
             disabled={pending}
             onClick={remove}
           >

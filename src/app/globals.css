@@ -67,7 +67,9 @@
   --muted: oklch(0.955 0.014 78);
   --muted-foreground: oklch(0.475 0.03 52);
   --accent: oklch(0.63 0.13 85);
-  --accent-foreground: oklch(0.99 0.008 80);
+  /* Dark on gold. Near-white here measures 3.43:1, which fails AA — and the
+     pairing is live: shadcn's menu items use bg-accent for their focus state. */
+  --accent-foreground: oklch(0.22 0.04 50);
   --destructive: oklch(0.54 0.21 27);
   --border: oklch(0.9 0.016 70);
   --input: oklch(0.9 0.016 70);

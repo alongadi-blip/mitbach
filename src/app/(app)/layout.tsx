@@ -28,6 +28,14 @@ export default async function AppLayout({ children }: LayoutProps<'/'>) {
 
   return (
     <>
+      {/* Visible only once tabbed to — lets keyboard users past the nav. */}
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:start-3 focus:z-50 focus:rounded-lg focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground"
+      >
+        דילוג לתוכן
+      </a>
+
       <header className="sticky top-0 z-20 border-b border-border bg-background/85 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-4">
           <Link href="/" className="cursor-pointer">
@@ -52,7 +60,9 @@ export default async function AppLayout({ children }: LayoutProps<'/'>) {
       </header>
 
       {/* pb-24 keeps the last row clear of the mobile tab bar. */}
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 pt-6 pb-24 md:pb-12">{children}</main>
+      <main id="main" className="mx-auto w-full max-w-6xl flex-1 px-4 pt-6 pb-24 md:pb-12">
+        {children}
+      </main>
 
       <MobileNav />
     </>
