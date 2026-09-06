@@ -12,5 +12,7 @@ export default async function LoginPage({ searchParams }: PageProps<'/login'>) {
   // "//evil.example" is a valid relative-looking URL that leaves the site.
   const next = requested.startsWith('/') && !requested.startsWith('//') ? requested : '/'
 
-  return <LoginForm next={next} />
+  const notice = params.error === 'reset-link' ? 'קישור האיפוס פג או כבר נוצל. בקשו קישור חדש.' : null
+
+  return <LoginForm next={next} notice={notice} />
 }

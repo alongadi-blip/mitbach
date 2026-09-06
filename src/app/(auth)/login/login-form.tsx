@@ -11,11 +11,11 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { createClient } from '@/lib/supabase/client'
 
-export function LoginForm({ next }: { next: string }) {
+export function LoginForm({ next, notice }: { next: string; notice?: string | null }) {
   const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(notice ?? null)
   const [pending, setPending] = useState(false)
 
   async function onSubmit(event: React.FormEvent) {
@@ -63,7 +63,15 @@ export function LoginForm({ next }: { next: string }) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="password">סיסמה</Label>
+            <div className="flex items-baseline justify-between gap-2">
+              <Label htmlFor="password">סיסמה</Label>
+              <Link
+                href="/forgot-password"
+                className="cursor-pointer text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+              >
+                שכחתי סיסמה
+              </Link>
+            </div>
             <Input
               id="password"
               type="password"

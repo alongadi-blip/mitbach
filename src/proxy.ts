@@ -8,7 +8,7 @@ import { NextResponse, type NextRequest } from 'next/server'
  * definition its callers have no session yet. It does its own rate limiting
  * and only ever acts on a valid, unredeemed invitation code.
  */
-const PUBLIC_PATHS = ['/login', '/join', '/auth', '/api/auth', '/api/join']
+const PUBLIC_PATHS = ['/login', '/join', '/forgot-password', '/auth', '/api/auth', '/api/join']
 
 function isPublic(pathname: string) {
   return PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(p + '/'))

@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { LogOut } from 'lucide-react'
+import { LogOut, UserCog } from 'lucide-react'
 
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
@@ -54,6 +54,16 @@ export function UserMenu({ name, email }: { name: string; email: string }) {
             {email}
           </span>
         </DropdownMenuLabel>
+
+        <DropdownMenuSeparator />
+
+        <DropdownMenuItem
+          className="cursor-pointer"
+          onClick={() => router.push('/account')}
+        >
+          <UserCog aria-hidden />
+          החשבון שלי
+        </DropdownMenuItem>
 
         <DropdownMenuSeparator />
 
