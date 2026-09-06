@@ -8,7 +8,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
-import { draftFromExtraction, RecipeForm, type RecipeDraft } from '@/components/recipe-form'
+import { RecipeForm } from '@/components/recipe-form'
+import { draftFromExtraction, EMPTY_DRAFT, type RecipeDraft } from '@/lib/recipe-draft'
 import type { ExtractionMethod, ExtractionResult } from '@/lib/types'
 import type { MyGroup } from '@/lib/queries'
 
@@ -18,24 +19,6 @@ const METHOD_NOTE: Record<ExtractionMethod, string | null> = {
   llm: 'המתכון חולץ מהטקסט על ידי Claude. כדאי לעבור על המצרכים לפני השמירה.',
   opengraph: null,
   empty: null,
-}
-
-const EMPTY_DRAFT: RecipeDraft = {
-  title: '',
-  description: '',
-  image_url: null,
-  source_url: null,
-  source_type: 'manual',
-  source_name: null,
-  servings: '',
-  prep_minutes: '',
-  cook_minutes: '',
-  ingredients: [{ quantity: null, unit: null, item: '', note: null }],
-  instructions: [''],
-  tags: [],
-  notes: '',
-  is_private: true,
-  group_id: null,
 }
 
 export function AddRecipe({ groups }: { groups: MyGroup[] }) {

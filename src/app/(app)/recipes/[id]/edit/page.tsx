@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 
-import { draftFromRecipe, RecipeForm } from '@/components/recipe-form'
+import { RecipeForm } from '@/components/recipe-form'
+import { draftFromRecipe } from '@/lib/recipe-draft'
 import { getMyGroups } from '@/lib/queries'
 import { createClient } from '@/lib/supabase/server'
 import type { Recipe } from '@/lib/types'

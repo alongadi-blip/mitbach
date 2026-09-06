@@ -1,8 +1,8 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
-import { GripVertical, ImageOff, Loader2, Plus, Trash2, X } from 'lucide-react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { GripVertical, ImageOff, Loader2, Plus, Trash2, Upload, X } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -10,68 +10,10 @@ import { Label } from '@/components/ui/label'
 import { NativeSelect } from '@/components/ui/native-select'
 import { Textarea } from '@/components/ui/textarea'
 import { createClient } from '@/lib/supabase/client'
-import type { ExtractedRecipe, Ingredient, Recipe, RecipeSource } from '@/lib/types'
+import { blankIngredient, type RecipeDraft } from '@/lib/recipe-draft'
+import { cn } from '@/lib/utils'
+import type { Ingredient } from '@/lib/types'
 import type { MyGroup } from '@/lib/queries'
-
-export type RecipeDraft = {
-  title: string
-  description: string
-  image_url: string | null
-  source_url: string | null
-  source_type: RecipeSource
-  source_name: string | null
-  servings: string
-  prep_minutes: string
-  cook_minutes: string
-  ingredients: Ingredient[]
-  instructions: string[]
-  tags: string[]
-  notes: string
-  is_private: boolean
-  group_id: string | null
-}
-
-export function draftFromExtraction(extracted: ExtractedRecipe): RecipeDraft {
-  return {
-    title: extracted.title,
-    description: extracted.description ?? '',
-    image_url: extracted.image_url,
-    source_url: extracted.source_url,
-    source_type: extracted.source_type,
-    source_name: extracted.source_name,
-    servings: extracted.servings ?? '',
-    prep_minutes: extracted.prep_minutes ? String(extracted.prep_minutes) : '',
-    cook_minutes: extracted.cook_minutes ? String(extracted.cook_minutes) : '',
-    ingredients: extracted.ingredients.length ? extracted.ingredients : [blankIngredient()],
-    instructions: extracted.instructions.length ? extracted.instructions : [''],
-    tags: extracted.tags,
-    notes: '',
-    is_private: true,
-    group_id: null,
-  }
-}
-
-export function draftFromRecipe(recipe: Recipe): RecipeDraft {
-  return {
-    title: recipe.title,
-    description: recipe.description ?? '',
-    image_url: recipe.image_url,
-    source_url: recipe.source_url,
-    source_type: recipe.source_type,
-    source_name: recipe.source_name,
-    servings: recipe.servings ?? '',
-    prep_minutes: recipe.prep_minutes ? String(recipe.prep_minutes) : '',
-    cook_minutes: recipe.cook_minutes ? String(recipe.cook_minutes) : '',
-    ingredients: recipe.ingredients.length ? recipe.ingredients : [blankIngredient()],
-    instructions: recipe.instructions.length ? recipe.instructions : [''],
-    tags: recipe.tags,
-    notes: recipe.notes ?? '',
-    is_private: recipe.is_private,
-    group_id: recipe.group_id,
-  }
-}
-
-const blankIngredient = (): Ingredient => ({ quantity: null, unit: null, item: '', note: null })
 
 /** Images from an extraction live on someone else's CDN and expire. */
 function isForeignImage(url: string | null) {
@@ -230,7 +172,7 @@ export function RecipeForm({
           />
         </div>
 
-        <ImageField url={draft.image_url} onClear={() => set('image_url', null)} />
+        <ImageField url={draft.image_url} onChange={(next) => set('image_url', next)} />
 
         <div className="grid gap-4 sm:grid-cols-3">
           <div className="space-y-2">
@@ -505,14 +447,92 @@ export function RecipeForm({
   )
 }
 
-function ImageField({ url, onClear }: { url: string | null; onClear: () => void }) {
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif']
+const MAX_IMAGE_BYTES = 8 * 1024 * 1024
+
+function ImageField({
+  url,
+  onChange,
+}: {
+  url: string | null
+  onChange: (url: string | null) => void
+}) {
+  const inputRef = useRef<HTMLInputElement>(null)
+  const [uploading, setUploading] = useState(false)
+  const [dragging, setDragging] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const upload = useCallback(
+    async (file: File) => {
+      setError(null)
+
+      if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+        setError('אפשר להעלות JPG, PNG, WEBP, GIF או AVIF בלבד.')
+        return
+      }
+      if (file.size > MAX_IMAGE_BYTES) {
+        setError('התמונה גדולה מ-8MB. נסו תמונה קטנה יותר.')
+        return
+      }
+
+      setUploading(true)
+
+      const supabase = createClient()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+
+      if (!user) {
+        setError('פג תוקף החיבור. התחברו מחדש.')
+        setUploading(false)
+        return
+      }
+
+      // The storage policy scopes writes to this folder, so the path is not
+      // cosmetic — it is what the policy checks.
+      const extension = file.type === 'image/jpeg' ? 'jpg' : file.type.slice('image/'.length)
+      const path = `${user.id}/${crypto.randomUUID()}.${extension}`
+
+      const { error: uploadError } = await supabase.storage
+        .from('recipe-images')
+        .upload(path, file, { contentType: file.type, upsert: false })
+
+      if (uploadError) {
+        setError('העלאת התמונה נכשלה. נסו שוב.')
+        setUploading(false)
+        return
+      }
+
+      const { data } = supabase.storage.from('recipe-images').getPublicUrl(path)
+      onChange(data.publicUrl)
+      setUploading(false)
+    },
+    [onChange],
+  )
+
+  // Ctrl+V anywhere on the page. Only fires when the clipboard actually holds
+  // an image, so pasting text into the other fields is untouched.
+  useEffect(() => {
+    function onPaste(event: ClipboardEvent) {
+      const file = Array.from(event.clipboardData?.files ?? []).find((f) =>
+        f.type.startsWith('image/'),
+      )
+      if (!file) return
+      event.preventDefault()
+      void upload(file)
+    }
+
+    document.addEventListener('paste', onPaste)
+    return () => document.removeEventListener('paste', onPaste)
+  }, [upload])
+
   return (
     <div className="space-y-2">
-      <Label>תמונה</Label>
+      <Label htmlFor="image-file">תמונה</Label>
 
       {url ? (
         <div className="relative overflow-hidden rounded-xl border border-border">
-          {/* A plain img: before saving, this URL can point at any host, and
+          {/* A plain img: an extracted URL can point at any host, and
               next/image only serves the ones allowed in next.config.ts. */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={url} alt="תצוגה מקדימה של תמונת המתכון" className="h-48 w-full object-cover" />
@@ -521,18 +541,77 @@ function ImageField({ url, onClear }: { url: string | null; onClear: () => void 
             variant="secondary"
             size="icon"
             className="absolute top-2 end-2 cursor-pointer"
-            onClick={onClear}
+            onClick={() => onChange(null)}
           >
             <X aria-hidden />
             <span className="sr-only">הסרת התמונה</span>
           </Button>
         </div>
       ) : (
-        <div className="flex h-24 items-center justify-center gap-2 rounded-xl border border-dashed border-border text-sm text-muted-foreground">
-          <ImageOff className="size-4" aria-hidden />
-          אין תמונה
+        <div
+          onDragOver={(event) => {
+            event.preventDefault()
+            setDragging(true)
+          }}
+          onDragLeave={() => setDragging(false)}
+          onDrop={(event) => {
+            event.preventDefault()
+            setDragging(false)
+            const file = Array.from(event.dataTransfer.files).find((f) =>
+              f.type.startsWith('image/'),
+            )
+            if (file) void upload(file)
+          }}
+          className={cn(
+            'flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed p-6 text-center transition-colors duration-200',
+            dragging ? 'border-primary bg-primary/5' : 'border-border',
+          )}
+        >
+          {uploading ? (
+            <>
+              <Loader2 className="size-5 animate-spin text-muted-foreground" aria-hidden />
+              <p className="text-sm text-muted-foreground">מעלים…</p>
+            </>
+          ) : (
+            <>
+              <ImageOff className="size-5 text-muted-foreground" aria-hidden />
+              <p className="text-sm text-muted-foreground">
+                הדביקו תמונה עם <kbd className="rounded bg-secondary px-1.5 py-0.5 text-xs">Ctrl+V</kbd>
+                , גררו קובץ לכאן, או
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="cursor-pointer"
+                onClick={() => inputRef.current?.click()}
+              >
+                <Upload data-icon="inline-start" aria-hidden />
+                בחירת תמונה
+              </Button>
+            </>
+          )}
         </div>
       )}
+
+      <input
+        id="image-file"
+        ref={inputRef}
+        type="file"
+        accept={ALLOWED_IMAGE_TYPES.join(',')}
+        className="sr-only"
+        onChange={(event) => {
+          const file = event.target.files?.[0]
+          if (file) void upload(file)
+          event.target.value = ''
+        }}
+      />
+
+      {error ? (
+        <p role="alert" className="text-sm font-medium text-destructive">
+          {error}
+        </p>
+      ) : null}
     </div>
   )
 }
