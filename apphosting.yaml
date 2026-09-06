@@ -1,0 +1,57 @@
+# Firebase App Hosting — build and runtime settings.
+#
+# App Hosting builds from the connected GitHub repository, so anything the
+# build needs must be declared here; .env.local never leaves this machine.
+
+runConfig:
+  # A family recipe app. One instance is plenty, and scaling to zero between
+  # meals is what keeps the bill near nothing.
+  minInstances: 0
+  maxInstances: 2
+  concurrency: 80
+  cpu: 1
+  memoryMiB: 512
+
+env:
+  # Safe to keep in the repo: both of these are shipped to the browser in the
+  # client bundle by design. The anon key grants nothing on its own — every
+  # table is behind row level security.
+  - variable: NEXT_PUBLIC_SUPABASE_URL
+    value: https://hneuzikfrqvqmzymtvvi.supabase.co
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_SUPABASE_ANON_KEY
+    value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhuZXV6aWtmcnF2cW16eW10dnZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg2NTMwNjIsImV4cCI6MjEwNDIyOTA2Mn0.3N5Tq24afIFAsdUP_oVGjYXnrqycWn8JWHJRVH8S9HE
+    availability:
+      - BUILD
+      - RUNTIME
+
+  # Set after the backend exists and its domain is known:
+  #   firebase apphosting:backends:list --project mitbach-il
+  - variable: NEXT_PUBLIC_SITE_URL
+    value: http://localhost:3000
+    availability:
+      - BUILD
+      - RUNTIME
+
+  # Held in Cloud Secret Manager, never in the repo. Create with:
+  #   firebase apphosting:secrets:set supabase-service-role-key --project mitbach-il
+  # This key bypasses row level security, so it is RUNTIME only — the build
+  # has no business reading it.
+  - variable: SUPABASE_SERVICE_ROLE_KEY
+    secret: supabase-service-role-key
+    availability:
+      - RUNTIME
+
+  # Optional, and commented out on purpose: App Hosting fails the build if a
+  # declared secret does not exist yet. Without the key, recipe sites still
+  # extract fully — only pasted text and social captions fall back to manual
+  # entry. To turn it on, create the secret and then uncomment these lines:
+  #   firebase apphosting:secrets:set anthropic-api-key --project mitbach-il
+  #
+  # - variable: ANTHROPIC_API_KEY
+  #   secret: anthropic-api-key
+  #   availability:
+  #     - RUNTIME
