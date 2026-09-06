@@ -28,10 +28,10 @@ env:
       - BUILD
       - RUNTIME
 
-  # Set after the backend exists and its domain is known:
-  #   firebase apphosting:backends:list --project mitbach-il
+  # Invitation links are built from this, so it has to be the live domain —
+  # pointing at localhost would mail people a link only they could open.
   - variable: NEXT_PUBLIC_SITE_URL
-    value: http://localhost:3000
+    value: https://mitbach--mitbach-il.us-central1.hosted.app
     availability:
       - BUILD
       - RUNTIME
@@ -45,13 +45,9 @@ env:
     availability:
       - RUNTIME
 
-  # Optional, and commented out on purpose: App Hosting fails the build if a
-  # declared secret does not exist yet. Without the key, recipe sites still
-  # extract fully — only pasted text and social captions fall back to manual
-  # entry. To turn it on, create the secret and then uncomment these lines:
-  #   firebase apphosting:secrets:set anthropic-api-key --project mitbach-il
-  #
-  # - variable: ANTHROPIC_API_KEY
-  #   secret: anthropic-api-key
-  #   availability:
-  #     - RUNTIME
+  # Powers extraction from pasted text and social captions. Recipe sites never
+  # reach it — they are read from their own structured data, at no cost.
+  - variable: ANTHROPIC_API_KEY
+    secret: anthropic-api-key
+    availability:
+      - RUNTIME
