@@ -3,6 +3,7 @@ import * as cheerio from 'cheerio'
 import type { ExtractedRecipe } from '@/lib/types'
 import {
   cleanLines,
+  decodeEntities,
   isoDurationToMinutes,
   parseIngredientLines,
   siteNameForUrl,
@@ -15,7 +16,7 @@ const asArray = (value: unknown): unknown[] =>
   value === undefined || value === null ? [] : Array.isArray(value) ? value : [value]
 
 const asString = (value: unknown): string | null => {
-  if (typeof value === 'string') return value.replace(/\s+/g, ' ').trim() || null
+  if (typeof value === 'string') return decodeEntities(value).replace(/\s+/g, ' ').trim() || null
   if (typeof value === 'number') return String(value)
   if (Array.isArray(value)) return asString(value[0])
   if (value && typeof value === 'object') {

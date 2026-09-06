@@ -1,3 +1,5 @@
+import { decodeHTML } from 'entities'
+
 import type { Ingredient, RecipeSource } from '@/lib/types'
 
 /** "PT1H30M" → 90. Recipe sites emit ISO 8601 durations for prep/cook time. */
@@ -120,9 +122,21 @@ export function siteNameForUrl(url: string): string | null {
   }
 }
 
-/** Collapses whitespace and drops empties — used on every extracted string list. */
+/**
+ * Turns `ג&#39;ינג&#39;ר` back into `ג'ינג'ר`.
+ *
+ * A <script> element holds raw text by the HTML spec, so entities inside a
+ * ld+json block are never decoded by the parser — and plenty of CMSs encode
+ * them there anyway. Attribute values arrive already decoded, so running this
+ * over them is a harmless no-op.
+ */
+export function decodeEntities(value: string): string {
+  return decodeHTML(value)
+}
+
+/** Collapses whitespace, decodes entities, and drops empties. */
 export function cleanLines(values: unknown[]): string[] {
   return values
-    .map((v) => (typeof v === 'string' ? v.replace(/\s+/g, ' ').trim() : ''))
+    .map((v) => (typeof v === 'string' ? decodeEntities(v).replace(/\s+/g, ' ').trim() : ''))
     .filter(Boolean)
 }
