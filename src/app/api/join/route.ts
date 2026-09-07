@@ -95,7 +95,13 @@ export async function POST(request: NextRequest) {
     await release()
     const alreadyExists = createError?.message?.toLowerCase().includes('already')
     return NextResponse.json(
-      { error: alreadyExists ? 'כבר קיים חשבון עם האימייל הזה. אפשר פשוט להתחבר.' : 'יצירת החשבון נכשלה.' },
+      {
+        error: alreadyExists
+          ? // The code is released above, so the same link still works — they
+            // just have to open it while signed in, which joins the group.
+            'כבר קיים חשבון עם האימייל הזה. התחברו, ואז פתחו שוב את קישור ההזמנה כדי לצרף את החשבון לקבוצה.'
+          : 'יצירת החשבון נכשלה.',
+      },
       { status: 400 },
     )
   }

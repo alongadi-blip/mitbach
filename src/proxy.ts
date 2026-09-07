@@ -60,7 +60,9 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  if (user && (pathname === '/login' || pathname === '/join')) {
+  // /join stays reachable while signed in: an existing member follows the
+  // same link to accept an invitation into another group.
+  if (user && pathname === '/login') {
     const url = request.nextUrl.clone()
     url.pathname = '/'
     url.search = ''

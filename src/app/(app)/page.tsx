@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { BookOpen, Plus } from 'lucide-react'
+import { BookOpen, Plus, Users } from 'lucide-react'
 
 import { EmptyState } from '@/components/empty-state'
 import { RecipeCard, type RecipeCardData } from '@/components/recipe-card'
@@ -69,6 +69,31 @@ export default async function CatalogPage({ searchParams }: PageProps<'/'>) {
         <p role="alert" className="rounded-xl border border-destructive/40 bg-destructive/10 p-4 text-sm">
           טעינת המתכונים נכשלה. רעננו את הדף ונסו שוב.
         </p>
+      ) : recipes.length === 0 && !filtered && groups.length === 0 ? (
+        // A blank catalogue with no groups is almost always someone who
+        // redeemed a system-only invitation: the account works, but nothing has
+        // been shared with them and they have no way to guess why.
+        <EmptyState
+          icon={Users}
+          title="אתם עדיין לא בשום קבוצה"
+          description="מתכונים משותפים שייכים לקבוצה, ולכן המסך ריק עד שתצטרפו לאחת. בקשו ממי שהזמין אתכם קישור הזמנה לקבוצה — פתיחתו תצרף את החשבון הקיים שלכם. אפשר גם לפתוח קבוצה משלכם, או פשוט להוסיף מתכון פרטי."
+          action={
+            <div className="flex flex-wrap justify-center gap-2">
+              <Button render={<Link href="/groups" />} className="cursor-pointer">
+                <Users data-icon="inline-start" aria-hidden />
+                לקבוצות
+              </Button>
+              <Button
+                variant="outline"
+                render={<Link href="/recipes/new" />}
+                className="cursor-pointer"
+              >
+                <Plus data-icon="inline-start" aria-hidden />
+                מתכון חדש
+              </Button>
+            </div>
+          }
+        />
       ) : recipes.length === 0 ? (
         <EmptyState
           icon={BookOpen}
