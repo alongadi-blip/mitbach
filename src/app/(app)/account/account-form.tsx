@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { SignOutButton } from '@/components/sign-out-button'
 import { createClient } from '@/lib/supabase/client'
 
 export function AccountForm({
@@ -199,6 +200,19 @@ export function AccountForm({
               {passwordState === 'saved' ? 'הסיסמה עודכנה' : 'עדכון סיסמה'}
             </Button>
           </form>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">יציאה</CardTitle>
+        </CardHeader>
+
+        <CardContent className="space-y-3">
+          <p className="text-sm text-muted-foreground">
+            תתנתקו מהמכשיר הזה. המתכונים והתפריטים נשארים במקומם, וכניסה חוזרת מחזירה הכול.
+          </p>
+          <SignOutButton className="w-full cursor-pointer sm:w-auto" />
         </CardContent>
       </Card>
     </div>

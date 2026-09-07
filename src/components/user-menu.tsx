@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { LogOut, UserCog } from 'lucide-react'
+import { ChevronDown, LogOut, UserCog } from 'lucide-react'
 
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
@@ -27,7 +27,12 @@ export function UserMenu({ name, email }: { name: string; email: string }) {
       .join('') || '?'
 
   async function signOut() {
+    // Both sides: the browser client drops its copy, the route handler clears
+    // the cookies the server reads. Clearing only one leaves the other
+    // believing someone is still signed in.
     await createClient().auth.signOut()
+    await fetch('/auth/signout', { method: 'POST', redirect: 'manual' }).catch(() => {})
+
     router.refresh()
     router.push('/login')
   }
