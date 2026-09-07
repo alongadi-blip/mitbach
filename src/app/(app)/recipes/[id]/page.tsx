@@ -74,6 +74,16 @@ export default async function RecipePage({ params }: PageProps<'/recipes/[id]'>)
             </Badge>
           ) : null}
 
+          {recipe.categories?.map((category) => (
+            <Link
+              key={category}
+              href={`/?category=${encodeURIComponent(category)}`}
+              className="cursor-pointer rounded-full bg-accent/20 px-2.5 py-0.5 text-xs font-medium text-foreground transition-colors duration-200 hover:bg-accent/35"
+            >
+              {category}
+            </Link>
+          ))}
+
           {recipe.tags.map((tag) => (
             <Link
               key={tag}

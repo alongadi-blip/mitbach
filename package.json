@@ -12,7 +12,8 @@
     "db:types": "supabase gen types typescript --linked > src/lib/types.generated.ts",
     "invite": "node --env-file=.env.local scripts/create-invite.mjs",
     "check:contrast": "node scripts/check-contrast.mjs",
-    "smoke": "node --env-file=.env.local scripts/smoke-authed.mjs"
+    "smoke": "node --env-file=.env.local scripts/smoke-authed.mjs",
+    "categorize": "node --env-file=.env.local scripts/categorize.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.124.0",

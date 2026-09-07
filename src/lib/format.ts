@@ -21,6 +21,23 @@ export const SOURCE_LABELS: Record<RecipeSource, string> = {
   text: 'מטקסט חופשי',
 }
 
+/**
+ * The category vocabulary. Fixed on purpose — it is what the filter row is
+ * built from, and free text there would make the row unusable.
+ *
+ * Two axes live in one list: what a dish is made of, and what it is for. A
+ * recipe may carry one from each, which is why the field is multi-select.
+ */
+export const RECIPE_CATEGORIES = [
+  'בשרי',
+  'חלבי',
+  'פרווה',
+  'דגים',
+  'סלטים',
+  'מאפים מלוחים',
+  'קינוחים',
+] as const
+
 /** The default course order for a menu; users may add their own. */
 export const MENU_CATEGORIES = [
   'מנות פתיחה',

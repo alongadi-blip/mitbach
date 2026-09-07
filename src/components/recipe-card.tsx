@@ -8,7 +8,15 @@ import type { Recipe } from '@/lib/types'
 
 export type RecipeCardData = Pick<
   Recipe,
-  'id' | 'title' | 'image_url' | 'description' | 'prep_minutes' | 'cook_minutes' | 'is_private' | 'tags'
+  | 'id'
+  | 'title'
+  | 'image_url'
+  | 'description'
+  | 'prep_minutes'
+  | 'cook_minutes'
+  | 'is_private'
+  | 'categories'
+  | 'tags'
 > & { groupName?: string | null }
 
 export function RecipeCard({ recipe }: { recipe: RecipeCardData }) {
@@ -64,7 +72,18 @@ export function RecipeCard({ recipe }: { recipe: RecipeCardData }) {
             </span>
           ) : null}
 
-          {recipe.tags.slice(0, 2).map((tag) => (
+          {/* Categories before tags: they are curated, so they read as labels
+              rather than as whatever the source site happened to publish. */}
+          {(recipe.categories ?? []).slice(0, 2).map((category) => (
+            <span
+              key={category}
+              className="rounded-full bg-accent/20 px-2 py-0.5 font-medium text-foreground"
+            >
+              {category}
+            </span>
+          ))}
+
+          {recipe.tags.slice(0, Math.max(0, 2 - (recipe.categories ?? []).length)).map((tag) => (
             <span key={tag} className="rounded-full bg-secondary px-2 py-0.5 text-secondary-foreground">
               {tag}
             </span>

@@ -5,6 +5,7 @@ import { useEffect, useState, useTransition } from 'react'
 import { Loader2, Search, X } from 'lucide-react'
 
 import { Input } from '@/components/ui/input'
+import { RECIPE_CATEGORIES } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import type { MyGroup } from '@/lib/queries'
 
@@ -16,6 +17,7 @@ export function RecipeFilters({ groups }: { groups: MyGroup[] }) {
 
   const scope = searchParams.get('scope') ?? 'all'
   const tag = searchParams.get('tag')
+  const category = searchParams.get('category')
   const [term, setTerm] = useState(searchParams.get('q') ?? '')
 
   function apply(next: URLSearchParams) {
@@ -39,17 +41,16 @@ export function RecipeFilters({ groups }: { groups: MyGroup[] }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [term, searchParams])
 
-  function setScope(value: string) {
+  /** Sets or clears one query parameter, leaving the others alone. */
+  function setParam(key: string, value: string | null) {
     const next = new URLSearchParams(searchParams)
-    if (value === 'all') next.delete('scope')
-    else next.set('scope', value)
+    if (value === null) next.delete(key)
+    else next.set(key, value)
     apply(next)
   }
 
-  function clearTag() {
-    const next = new URLSearchParams(searchParams)
-    next.delete('tag')
-    apply(next)
+  function setScope(value: string) {
+    setParam('scope', value === 'all' ? null : value)
   }
 
   const chips = [
@@ -81,6 +82,30 @@ export function RecipeFilters({ groups }: { groups: MyGroup[] }) {
         ) : null}
       </div>
 
+      {/* Categories first: this is the row people reach for most. */}
+      <div className="flex flex-wrap items-center gap-2">
+        {RECIPE_CATEGORIES.map((name) => {
+          const active = category === name
+
+          return (
+            <button
+              key={name}
+              type="button"
+              onClick={() => setParam('category', active ? null : name)}
+              aria-pressed={active}
+              className={cn(
+                'inline-flex min-h-11 cursor-pointer items-center rounded-full border px-4 text-sm font-medium transition-colors duration-200 md:min-h-9',
+                active
+                  ? 'border-accent bg-accent text-accent-foreground'
+                  : 'border-border bg-card text-muted-foreground hover:border-accent/50 hover:text-foreground',
+              )}
+            >
+              {name}
+            </button>
+          )
+        })}
+      </div>
+
       <div className="flex flex-wrap items-center gap-2">
         {chips.map((chip) => (
           <button
@@ -102,7 +127,7 @@ export function RecipeFilters({ groups }: { groups: MyGroup[] }) {
         {tag ? (
           <button
             type="button"
-            onClick={clearTag}
+            onClick={() => setParam('tag', null)}
             className="inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-full border border-accent bg-accent/15 px-3.5 text-sm font-medium text-foreground transition-colors duration-200 hover:bg-accent/25"
           >
             {tag}

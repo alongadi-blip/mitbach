@@ -24,6 +24,12 @@ const RecipeSchema = z.object({
   cook_minutes: z.number().int().nullable(),
   ingredients: z.array(IngredientSchema),
   instructions: z.array(z.string()).describe('One step per entry, in order, unnumbered.'),
+  categories: z
+    .array(z.enum(['בשרי', 'חלבי', 'פרווה', 'דגים', 'סלטים', 'מאפים מלוחים', 'קינוחים']))
+    .describe(
+      'רק מהרשימה הסגורה. בדרך כלל אחת לסוג (בשרי/חלבי/פרווה/דגים) ואחת לתפקיד ' +
+      '(סלטים/מאפים מלוחים/קינוחים). אל תנחש כשלא ברור — עדיף רשימה ריקה.',
+    ),
   tags: z.array(z.string()).describe('At most 6 short tags, in the source language.'),
 })
 
@@ -36,6 +42,7 @@ const SYSTEM = `אתה מחלץ מתכונים מטקסט גולמי שנלקח 
 - פרק כל מצרך לכמות, יחידה ופריט. "2 כוסות קמח" הוא quantity="2", unit="כוסות", item="קמח".
 - כל הוראת הכנה היא איבר נפרד ברשימה, לפי הסדר, בלי מספור בתחילת השורה.
 - זמנים הם מספרים בדקות בלבד. "שעה וחצי" הוא 90.
+- סווג לקטגוריות רק לפי מה שבאמת מופיע במצרכים. מנה עם בשר או עוף היא בשרי, מנה עם חלב או גבינה היא חלבי, ומנה בלי שניהם היא פרווה. אם אינך בטוח — השאר ריק.
 - התעלם מפרסומות, תפריטי ניווט, תגובות גולשים וכפתורי שיתוף.`
 
 /**
@@ -91,6 +98,7 @@ export async function extractWithClaude(
         cook_minutes: parsed.cook_minutes,
         ingredients: parsed.ingredients,
         instructions: parsed.instructions,
+        categories: parsed.categories,
         tags: parsed.tags.slice(0, 6),
       },
     }

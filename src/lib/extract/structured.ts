@@ -108,6 +108,7 @@ function emptyRecipe(url: string | null): ExtractedRecipe {
     cook_minutes: null,
     ingredients: [],
     instructions: [],
+    categories: [],
     tags: [],
   }
 }

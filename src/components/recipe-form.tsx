@@ -7,6 +7,7 @@ import { GripVertical, ImageOff, Loader2, Plus, Trash2, Upload, X } from 'lucide
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { CategoryPicker } from '@/components/category-picker'
 import { NativeSelect } from '@/components/ui/native-select'
 import { Textarea } from '@/components/ui/textarea'
 import { createClient } from '@/lib/supabase/client'
@@ -122,6 +123,7 @@ export function RecipeForm({
         cook_minutes: draft.cook_minutes ? Number(draft.cook_minutes) : null,
         ingredients,
         instructions,
+        categories: draft.categories,
         tags: draft.tags,
         notes: draft.notes.trim() || null,
         is_private: draft.is_private,
@@ -336,6 +338,18 @@ export function RecipeForm({
           <Plus data-icon="inline-start" aria-hidden />
           הוספת שלב
         </Button>
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="font-heading text-lg font-bold">קטגוריות</h2>
+        <p className="text-sm text-muted-foreground">
+          לפי אלה מסננים את המתכונים במסך הראשי. אפשר לסמן יותר מאחת — למשל
+          &quot;קינוחים&quot; יחד עם &quot;חלבי&quot;.
+        </p>
+        <CategoryPicker
+          selected={draft.categories}
+          onChange={(next) => set('categories', next)}
+        />
       </section>
 
       <section className="space-y-3">

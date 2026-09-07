@@ -21,6 +21,7 @@ export default async function CatalogPage({ searchParams }: PageProps<'/'>) {
   const q = typeof params.q === 'string' ? sanitizeSearch(params.q) : ''
   const scope = typeof params.scope === 'string' ? params.scope : 'all'
   const tag = typeof params.tag === 'string' ? params.tag : null
+  const category = typeof params.category === 'string' ? params.category : null
 
   const supabase = await createClient()
   const [groups, { data: userData }] = await Promise.all([getMyGroups(), supabase.auth.getUser()])
@@ -29,13 +30,14 @@ export default async function CatalogPage({ searchParams }: PageProps<'/'>) {
   let query = supabase
     .from('recipes')
     .select(
-      'id, title, description, image_url, prep_minutes, cook_minutes, is_private, tags, group_id, groups(name)',
+      'id, title, description, image_url, prep_minutes, cook_minutes, is_private, categories, tags, group_id, groups(name)',
     )
     .order('created_at', { ascending: false })
     .limit(60)
 
   if (q) query = query.or(`title.ilike.%${q}%,description.ilike.%${q}%`)
   if (tag) query = query.contains('tags', [tag])
+  if (category) query = query.contains('categories', [category])
 
   if (scope === 'mine') {
     query = query.eq('owner_id', userId).eq('is_private', true)
@@ -50,7 +52,7 @@ export default async function CatalogPage({ searchParams }: PageProps<'/'>) {
     groupName: (row.groups as unknown as { name: string } | null)?.name ?? null,
   }))
 
-  const filtered = Boolean(q || tag || scope !== 'all')
+  const filtered = Boolean(q || tag || category || scope !== 'all')
 
   return (
     <div className="space-y-6">

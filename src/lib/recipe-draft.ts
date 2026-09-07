@@ -22,6 +22,7 @@ export type RecipeDraft = {
   cook_minutes: string
   ingredients: Ingredient[]
   instructions: string[]
+  categories: string[]
   tags: string[]
   notes: string
   is_private: boolean
@@ -47,6 +48,7 @@ export const EMPTY_DRAFT: RecipeDraft = {
   cook_minutes: '',
   ingredients: [blankIngredient()],
   instructions: [''],
+  categories: [],
   tags: [],
   notes: '',
   is_private: true,
@@ -67,6 +69,7 @@ export function draftFromExtraction(extracted: ExtractedRecipe): RecipeDraft {
     cook_minutes: extracted.cook_minutes ? String(extracted.cook_minutes) : '',
     ingredients: extracted.ingredients.length ? extracted.ingredients : [blankIngredient()],
     instructions: extracted.instructions.length ? extracted.instructions : [''],
+    categories: extracted.categories ?? [],
     tags: extracted.tags,
   }
 }
@@ -84,6 +87,7 @@ export function draftFromRecipe(recipe: Recipe): RecipeDraft {
     cook_minutes: recipe.cook_minutes ? String(recipe.cook_minutes) : '',
     ingredients: recipe.ingredients?.length ? recipe.ingredients : [blankIngredient()],
     instructions: recipe.instructions?.length ? recipe.instructions : [''],
+    categories: recipe.categories ?? [],
     tags: recipe.tags ?? [],
     notes: recipe.notes ?? '',
     is_private: recipe.is_private,

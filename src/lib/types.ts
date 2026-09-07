@@ -67,6 +67,7 @@ export type Recipe = {
   cook_minutes: number | null
   ingredients: Ingredient[]
   instructions: string[]
+  categories: string[]
   tags: string[]
   notes: string | null
   created_at: string
@@ -112,6 +113,7 @@ export type ExtractedRecipe = {
   cook_minutes: number | null
   ingredients: Ingredient[]
   instructions: string[]
+  categories: string[]
   tags: string[]
 }
 
