@@ -5,6 +5,7 @@ import { Clock, ExternalLink, Lock, Pencil, Users, UtensilsCrossed } from 'lucid
 
 import { DeleteButton } from '@/components/delete-button'
 import { IngredientChecklist } from '@/components/ingredient-checklist'
+import { InstructionChecklist } from '@/components/instruction-checklist'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
@@ -137,16 +138,7 @@ export default async function RecipePage({ params }: PageProps<'/recipes/[id]'>)
         <section className="space-y-3">
           <h2 className="font-heading text-xl font-bold">אופן ההכנה</h2>
           {recipe.instructions.length > 0 ? (
-            <ol className="space-y-4">
-              {recipe.instructions.map((step, index) => (
-                <li key={index} className="flex gap-3">
-                  <span className="grid size-7 shrink-0 place-items-center rounded-full bg-primary/10 text-sm font-bold text-primary">
-                    {index + 1}
-                  </span>
-                  <p className="text-pretty leading-relaxed">{step}</p>
-                </li>
-              ))}
-            </ol>
+            <InstructionChecklist instructions={recipe.instructions} />
           ) : (
             <p className="text-sm text-muted-foreground">לא נשמרו הוראות הכנה.</p>
           )}
