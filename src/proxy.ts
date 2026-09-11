@@ -8,7 +8,19 @@ import { NextResponse, type NextRequest } from 'next/server'
  * definition its callers have no session yet. It does its own rate limiting
  * and only ever acts on a valid, unredeemed invitation code.
  */
-const PUBLIC_PATHS = ['/login', '/join', '/forgot-password', '/auth', '/api/auth', '/api/join']
+const PUBLIC_PATHS = [
+  '/login',
+  '/join',
+  '/forgot-password',
+  '/auth',
+  '/api/auth',
+  '/api/join',
+  // Metadata the OS fetches without a session when adding to the home screen.
+  // Redirecting these to /login is why the shortcut had no name or icon.
+  '/manifest.webmanifest',
+  '/icon',
+  '/apple-icon',
+]
 
 function isPublic(pathname: string) {
   return PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(p + '/'))
