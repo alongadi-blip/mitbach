@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
+import { cache } from 'react'
 
 /** Request-scoped client that reads the caller's session. Subject to RLS. */
 export async function createClient() {
@@ -29,11 +30,19 @@ export async function createClient() {
 }
 
 /**
- * The signed-in user, verified against the auth server.
- * Never trust getSession() here — its cookie is not re-validated.
+ * The signed-in user, from a JWT whose signature is checked locally against
+ * the project's published ES256 key. Unlike getUser() this needs no round trip
+ * to the auth server — which sits in Frankfurt while we run in Iowa, so each
+ * call used to cost a transatlantic hop. Never use getSession() instead: its
+ * cookie is not verified at all.
+ *
+ * Wrapped in cache() so a layout and page rendering the same request share one
+ * verification.
  */
-export async function getUser() {
+export const getUser = cache(async () => {
   const supabase = await createClient()
-  const { data } = await supabase.auth.getUser()
-  return data.user
-}
+  const { data } = await supabase.auth.getClaims()
+  const claims = data?.claims
+  if (!claims?.sub) return null
+  return { id: claims.sub, email: (claims.email as string | undefined) ?? undefined }
+})

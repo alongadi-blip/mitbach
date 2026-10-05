@@ -6,13 +6,11 @@ import { Brand } from '@/components/brand'
 import { DesktopNav, MobileNav } from '@/components/main-nav'
 import { UserMenu } from '@/components/user-menu'
 import { Button } from '@/components/ui/button'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, getUser } from '@/lib/supabase/server'
 
 export default async function AppLayout({ children }: LayoutProps<'/'>) {
   const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const user = await getUser()
 
   // The proxy already turns anonymous requests away; this is the guard that
   // actually protects the data, since a proxy can be bypassed by a rewrite.

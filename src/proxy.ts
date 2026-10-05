@@ -52,9 +52,10 @@ export async function proxy(request: NextRequest) {
 
   // Refreshes an expiring token and writes the rotated cookies onto `response`.
   // Do not put anything between createServerClient and this call.
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  // getClaims verifies the JWT locally against the project's ES256 key, so a
+  // request with a fresh token never waits on the auth server across the ocean.
+  const { data } = await supabase.auth.getClaims()
+  const user = data?.claims?.sub ? data.claims : null
 
   const { pathname } = request.nextUrl
 

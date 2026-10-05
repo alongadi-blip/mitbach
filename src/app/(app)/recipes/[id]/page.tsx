@@ -10,15 +10,15 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { formatMinutes, SOURCE_LABELS } from '@/lib/format'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, getUser } from '@/lib/supabase/server'
 import type { Recipe } from '@/lib/types'
 
 export default async function RecipePage({ params }: PageProps<'/recipes/[id]'>) {
   const { id } = await params
   const supabase = await createClient()
 
-  const [{ data: userData }, { data }] = await Promise.all([
-    supabase.auth.getUser(),
+  const [user, { data }] = await Promise.all([
+    getUser(),
     supabase.from('recipes').select('*, groups(id, name)').eq('id', id).maybeSingle(),
   ])
 
@@ -27,7 +27,7 @@ export default async function RecipePage({ params }: PageProps<'/recipes/[id]'>)
   if (!data) notFound()
 
   const recipe = data as unknown as Recipe & { groups: { id: string; name: string } | null }
-  const userId = userData.user!.id
+  const userId = user!.id
 
   const { data: membership } = recipe.group_id
     ? await supabase

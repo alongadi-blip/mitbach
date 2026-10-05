@@ -12,22 +12,22 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { formatEventDate } from '@/lib/format'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, getUser } from '@/lib/supabase/server'
 import type { Menu, MenuItem } from '@/lib/types'
 
 export default async function MenuPage({ params }: PageProps<'/menus/[id]'>) {
   const { id } = await params
   const supabase = await createClient()
 
-  const [{ data: userData }, { data }] = await Promise.all([
-    supabase.auth.getUser(),
+  const [user, { data }] = await Promise.all([
+    getUser(),
     supabase.from('menus').select('*, groups(id, name)').eq('id', id).maybeSingle(),
   ])
 
   if (!data) notFound()
 
   const menu = data as unknown as Menu & { groups: { id: string; name: string } | null }
-  const userId = userData.user!.id
+  const userId = user!.id
 
   const [{ data: itemRows }, { data: membership }] = await Promise.all([
     supabase

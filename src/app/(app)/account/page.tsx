@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 
 import { AccountForm } from './account-form'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, getUser } from '@/lib/supabase/server'
 
 export const metadata: Metadata = { title: 'החשבון שלי · מטבח' }
 
@@ -10,9 +10,7 @@ export default async function AccountPage({ searchParams }: PageProps<'/account'
   const fromReset = params.reset === '1'
 
   const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const user = await getUser()
 
   const { data: profile } = await supabase
     .from('profiles')

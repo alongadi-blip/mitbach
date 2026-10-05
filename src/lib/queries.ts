@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient, getUser } from '@/lib/supabase/server'
 import type { GroupRole } from '@/lib/types'
 
 export type MyGroup = { id: string; name: string; role: GroupRole; owner_id: string }
@@ -9,9 +9,7 @@ export type MyGroup = { id: string; name: string; role: GroupRole; owner_id: str
  */
 export async function getMyGroups(): Promise<MyGroup[]> {
   const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const user = await getUser()
   if (!user) return []
 
   const { data } = await supabase

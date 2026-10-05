@@ -8,15 +8,15 @@ import { MemberRow, type Member } from '@/components/member-row'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { formatRelativeDate, ROLE_LABELS } from '@/lib/format'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, getUser } from '@/lib/supabase/server'
 import type { GroupRole } from '@/lib/types'
 
 export default async function GroupPage({ params }: PageProps<'/groups/[id]'>) {
   const { id } = await params
   const supabase = await createClient()
 
-  const [{ data: userData }, { data: group }, { data: memberRows }] = await Promise.all([
-    supabase.auth.getUser(),
+  const [user, { data: group }, { data: memberRows }] = await Promise.all([
+    getUser(),
     supabase.from('groups').select('id, name, description, owner_id').eq('id', id).maybeSingle(),
     supabase
       .from('group_members')
@@ -27,7 +27,7 @@ export default async function GroupPage({ params }: PageProps<'/groups/[id]'>) {
 
   if (!group) notFound()
 
-  const userId = userData.user!.id
+  const userId = user!.id
   const members: Member[] = (memberRows ?? []).map((row) => {
     const profile = row.profiles as unknown as { name: string | null; email: string } | null
     return {

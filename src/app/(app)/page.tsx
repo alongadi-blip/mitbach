@@ -6,7 +6,7 @@ import { RecipeCard, type RecipeCardData } from '@/components/recipe-card'
 import { RecipeFilters } from '@/components/recipe-filters'
 import { Button } from '@/components/ui/button'
 import { getMyGroups } from '@/lib/queries'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, getUser } from '@/lib/supabase/server'
 
 /**
  * PostgREST parses `or=(...)` as a filter expression, so a search term has to
@@ -24,8 +24,8 @@ export default async function CatalogPage({ searchParams }: PageProps<'/'>) {
   const category = typeof params.category === 'string' ? params.category : null
 
   const supabase = await createClient()
-  const [groups, { data: userData }] = await Promise.all([getMyGroups(), supabase.auth.getUser()])
-  const userId = userData.user!.id
+  const [groups, user] = await Promise.all([getMyGroups(), getUser()])
+  const userId = user!.id
 
   let query = supabase
     .from('recipes')
