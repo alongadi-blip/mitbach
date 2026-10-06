@@ -1,0 +1,15 @@
+{
+  "apphosting": {
+    "backendId": "app",
+    "rootDir": ".",
+    "ignore": [
+      "node_modules",
+      ".git",
+      ".next",
+      ".env*",
+      "*.log",
+      ".supabase-db-password.txt",
+      ".temporary-password.txt"
+    ]
+  }
+}

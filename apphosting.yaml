@@ -30,8 +30,10 @@ env:
 
   # Invitation links are built from this, so it has to be the live domain —
   # pointing at localhost would mail people a link only they could open.
+  # The app moved from us-central1 to europe-west4 (backend `app`) to sit next
+  # to Supabase in Frankfurt; the old backend only forwards here (src/proxy.ts).
   - variable: NEXT_PUBLIC_SITE_URL
-    value: https://mitbach--mitbach-il.us-central1.hosted.app
+    value: https://app--mitbach-il.europe-west4.hosted.app
     availability:
       - BUILD
       - RUNTIME

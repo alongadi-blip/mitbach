@@ -157,12 +157,12 @@ enabled = true
 # in emails.
 # The deployed app. Password-reset and email-change links are built from
 # this, so a localhost value would mail people links only they could open.
-site_url = "https://mitbach--mitbach-il.us-central1.hosted.app"
+site_url = "https://app--mitbach-il.europe-west4.hosted.app"
 # The public URL that Auth serves on. Defaults to the API external URL with `/auth/v1` appended.
 # external_url = ""
 # A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
 # Wildcards so /auth/confirm is accepted; Supabase matches the whole URL.
-additional_redirect_urls = ["http://localhost:3000/**", "https://mitbach--mitbach-il.us-central1.hosted.app/**"]
+additional_redirect_urls = ["http://localhost:3000/**", "https://app--mitbach-il.europe-west4.hosted.app/**", "https://mitbach--mitbach-il.us-central1.hosted.app/**"]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
 jwt_expiry = 3600
 # JWT issuer URL. If not set, defaults to auth.external_url.

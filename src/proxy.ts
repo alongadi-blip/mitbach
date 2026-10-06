@@ -22,11 +22,24 @@ const PUBLIC_PATHS = [
   '/apple-icon',
 ]
 
+/**
+ * The address the app had before it moved to europe-west4. That backend still
+ * runs this same code and forwards every request to NEXT_PUBLIC_SITE_URL, path
+ * and query intact, so invitation links already handed out keep working.
+ */
+const LEGACY_HOST = 'mitbach--mitbach-il.us-central1.hosted.app'
+
 function isPublic(pathname: string) {
   return PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(p + '/'))
 }
 
 export async function proxy(request: NextRequest) {
+  const host = request.headers.get('x-forwarded-host') ?? request.headers.get('host') ?? ''
+  const site = process.env.NEXT_PUBLIC_SITE_URL
+  if (host === LEGACY_HOST && site) {
+    return NextResponse.redirect(new URL(request.nextUrl.pathname + request.nextUrl.search, site), 308)
+  }
+
   let response = NextResponse.next({ request })
 
   const supabase = createServerClient(
