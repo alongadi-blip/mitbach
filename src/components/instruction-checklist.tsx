@@ -1,18 +1,16 @@
 'use client'
 
 import { useState } from 'react'
-import { Check, RotateCcw } from 'lucide-react'
+import { RotateCcw } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import { cn } from '@/lib/utils'
 
 /**
- * Steps you can tick off while cooking.
- *
- * The step number doubles as the toggle instead of sitting beside a separate
- * checkbox: the number has to be there anyway, and on a phone the row has no
- * width to spare. Like the ingredient list, the state belongs to this cooking
- * session and is deliberately not saved.
+ * Steps you can tick off while cooking, with the same checkbox as the
+ * ingredient list so the two read as one gesture. Like the ingredient list,
+ * the state belongs to this cooking session and is deliberately not saved.
  */
 export function InstructionChecklist({ instructions }: { instructions: string[] }) {
   const [done, setDone] = useState<Set<number>>(new Set())
@@ -31,39 +29,38 @@ export function InstructionChecklist({ instructions }: { instructions: string[] 
       <ol className="space-y-1">
         {instructions.map((step, index) => {
           const isDone = done.has(index)
+          const id = `instruction-${index}`
 
           return (
             <li key={index}>
-              <button
-                type="button"
-                onClick={() => toggle(index)}
-                aria-pressed={isDone}
-                className="flex w-full cursor-pointer items-start gap-3 rounded-lg px-2 py-2 text-start transition-colors duration-200 hover:bg-secondary/60 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+              <label
+                htmlFor={id}
+                className={cn(
+                  'flex min-h-11 cursor-pointer items-start gap-3 rounded-lg px-2 py-2 transition-colors duration-200 hover:bg-secondary/60',
+                  isDone && 'text-muted-foreground',
+                )}
               >
-                <span
-                  className={cn(
-                    'mt-0.5 grid size-7 shrink-0 place-items-center rounded-full text-sm font-bold transition-colors duration-200',
-                    isDone
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-primary/10 text-primary',
-                  )}
-                >
-                  {isDone ? <Check className="size-4" aria-hidden /> : index + 1}
-                </span>
+                <Checkbox
+                  id={id}
+                  checked={isDone}
+                  onCheckedChange={() => toggle(index)}
+                  className="mt-1.5"
+                />
 
                 <span
+                  aria-hidden
                   className={cn(
-                    'text-pretty leading-relaxed',
-                    isDone && 'text-muted-foreground line-through',
+                    'grid size-7 shrink-0 place-items-center rounded-full text-sm font-bold transition-colors duration-200',
+                    isDone ? 'bg-muted text-muted-foreground' : 'bg-primary/10 text-primary',
                   )}
                 >
+                  {index + 1}
+                </span>
+
+                <span className={cn('text-pretty leading-relaxed', isDone && 'line-through')}>
                   {step}
                 </span>
-
-                <span className="sr-only">
-                  {isDone ? `בטלו את סימון שלב ${index + 1}` : `סמנו את שלב ${index + 1} כבוצע`}
-                </span>
-              </button>
+              </label>
             </li>
           )
         })}
