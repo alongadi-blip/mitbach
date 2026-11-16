@@ -43,7 +43,17 @@ const SYSTEM = `אתה מחלץ מתכונים מטקסט גולמי שנלקח 
 - כל הוראת הכנה היא איבר נפרד ברשימה, לפי הסדר, בלי מספור בתחילת השורה.
 - זמנים הם מספרים בדקות בלבד. "שעה וחצי" הוא 90.
 - סווג לקטגוריות רק לפי מה שבאמת מופיע במצרכים. מנה עם בשר או עוף היא בשרי, מנה עם חלב או גבינה היא חלבי, ומנה בלי שניהם היא פרווה. אם אינך בטוח — השאר ריק.
-- התעלם מפרסומות, תפריטי ניווט, תגובות גולשים וכפתורי שיתוף.`
+- התעלם מפרסומות, תפריטי ניווט, תגובות גולשים וכפתורי שיתוף.
+
+כשמצורפים צילומי מסך:
+- הם חלקים רצופים של אותו פוסט, לפי הסדר. חבר אותם לטקסט אחד ואל תכפיל שורות שמופיעות בשני צילומים חופפים.
+- קרא רק את הכיתוב והמתכון. התעלם משם המשתמש, לייקים, תגובות, כפתורים ושורת המצב של הטלפון.`
+
+export type ScreenshotImage = {
+  /** Base64, without a data: prefix. */
+  data: string
+  mediaType: 'image/jpeg' | 'image/png' | 'image/webp' | 'image/gif'
+}
 
 /**
  * The paid half of the hybrid: only reached when the free structured-data path
@@ -52,10 +62,11 @@ const SYSTEM = `אתה מחלץ מתכונים מטקסט גולמי שנלקח 
  */
 export async function extractWithClaude(
   text: string,
-  context: { sourceUrl?: string | null; ogTitle?: string | null },
+  context: { sourceUrl?: string | null; ogTitle?: string | null; images?: ScreenshotImage[] },
 ): Promise<{ recipe: Partial<ExtractedRecipe>; isRecipe: boolean } | null> {
   if (!process.env.ANTHROPIC_API_KEY) return null
-  if (text.trim().length < 40) return null
+  const images = context.images ?? []
+  if (!images.length && text.trim().length < 40) return null
 
   const client = new Anthropic()
 
@@ -80,7 +91,18 @@ export async function extractWithClaude(
       messages: [
         {
           role: 'user',
-          content: `${preamble}\n\nחלץ את המתכון מהטקסט הבא:\n\n---\n${text}\n---`,
+          content: images.length
+            ? [
+                ...images.map((image) => ({
+                  type: 'image' as const,
+                  source: { type: 'base64' as const, media_type: image.mediaType, data: image.data },
+                })),
+                {
+                  type: 'text' as const,
+                  text: `${preamble}\n\nחלץ את המתכון מצילומי המסך המצורפים (${images.length}, לפי הסדר).`,
+                },
+              ]
+            : `${preamble}\n\nחלץ את המתכון מהטקסט הבא:\n\n---\n${text}\n---`,
         },
       ],
     })

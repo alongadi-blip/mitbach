@@ -1,17 +1,28 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 
-import { extractFromText, extractFromUrl, FetchPageError } from '@/lib/extract'
+import { extractFromImages, extractFromText, extractFromUrl, FetchPageError } from '@/lib/extract'
 import { createClient } from '@/lib/supabase/server'
 import { isRateLimited } from '@/lib/rate-limit'
+
+// The client downscales screenshots to ~1600px JPEG (a few hundred KB each),
+// so these caps are generous while keeping the request well under 10MB.
+const imageSchema = z.object({
+  // 8 × 1.1MB stays under the proxy's 10MB default body buffer.
+  data: z.string().min(100).max(1_100_000).regex(/^[A-Za-z0-9+/=]+$/, 'תמונה לא תקינה'),
+  mediaType: z.enum(['image/jpeg', 'image/png', 'image/webp', 'image/gif']),
+})
 
 const bodySchema = z
   .object({
     url: z.string().trim().min(1).optional(),
     text: z.string().trim().min(1).max(60_000).optional(),
+    images: z.array(imageSchema).min(1).max(8, 'אפשר עד 8 צילומי מסך').optional(),
   })
-  .refine((b) => Boolean(b.url) !== Boolean(b.text), {
-    message: 'שלחו קישור או טקסט — לא את שניהם',
+  // Screenshots may come with the post link (for its cover image); otherwise
+  // it is exactly one of link or text.
+  .refine((b) => (b.images ? !b.text : Boolean(b.url) !== Boolean(b.text)), {
+    message: 'שלחו קישור, טקסט או צילומי מסך',
   })
 
 /**
@@ -41,9 +52,12 @@ export async function POST(request: Request) {
   }
 
   try {
-    const result = parsed.data.url
-      ? await extractFromUrl(normalizeUrl(parsed.data.url))
-      : await extractFromText(parsed.data.text!)
+    const { url, text, images } = parsed.data
+    const result = images
+      ? await extractFromImages(images, url ? normalizeUrl(url) : null)
+      : url
+        ? await extractFromUrl(normalizeUrl(url))
+        : await extractFromText(text!)
 
     return NextResponse.json(result)
   } catch (error) {

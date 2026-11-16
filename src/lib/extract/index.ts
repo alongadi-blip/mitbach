@@ -4,7 +4,7 @@ import * as cheerio from 'cheerio'
 
 import type { ExtractedRecipe, ExtractionResult } from '@/lib/types'
 import { fetchPage, FetchPageError } from './fetch-page'
-import { extractWithClaude, llmAvailable } from './llm'
+import { extractWithClaude, llmAvailable, type ScreenshotImage } from './llm'
 import { siteNameForUrl, sourceTypeForUrl } from './parse-helpers'
 import { emptyRecipe, fromJsonLd, fromMicrodata, fromOpenGraph, readableText } from './structured'
 
@@ -104,9 +104,71 @@ function socialWall(url: string): string | null {
   const type = sourceTypeForUrl(url)
   if (type === 'instagram' || type === 'facebook' || type === 'tiktok') {
     const name = { instagram: 'אינסטגרם', facebook: 'פייסבוק', tiktok: 'טיקטוק' }[type]
-    return `${name} חוסמת קריאה אוטומטית של פוסטים, ולכן קיבלנו רק את התמונה והכיתוב החלקי. העתיקו את הכיתוב המלא של הפוסט והדביקו אותו בלשונית "טקסט חופשי" — משם החילוץ עובד מצוין.`
+    return `${name} חוסמת קריאה אוטומטית של פוסטים, ולכן קיבלנו רק את התמונה והכיתוב החלקי. צלמו מסך של הכיתוב והעלו את הצילומים בלשונית "צילומי מסך", יחד עם הקישור — המתכון ייקרא מהם ישירות.`
   }
   return null
+}
+
+/**
+ * Screenshots of a post — the way around Instagram's login wall. Claude reads
+ * the caption straight from the images. When the post link comes along, the
+ * page still serves what it shows without a login (the cover image and the
+ * source), so the saved recipe keeps its picture and links back to the post.
+ */
+export async function extractFromImages(
+  images: ScreenshotImage[],
+  rawUrl: string | null,
+): Promise<ExtractionResult> {
+  let base: ExtractedRecipe = { ...emptyRecipe(null), source_type: 'text' }
+
+  if (rawUrl) {
+    base = {
+      ...base,
+      source_url: rawUrl,
+      source_type: sourceTypeForUrl(rawUrl),
+      source_name: siteNameForUrl(rawUrl),
+    }
+    try {
+      const page = await fetchPage(rawUrl)
+      const og = fromOpenGraph(cheerio.load(page.html), page.finalUrl)
+      base = {
+        ...base,
+        source_url: page.finalUrl,
+        source_name: og.source_name ?? base.source_name,
+        image_url: absolutize(og.image_url, page.finalUrl),
+      }
+    } catch {
+      // The link is a bonus; the screenshots carry the recipe either way.
+    }
+  }
+
+  if (!llmAvailable()) {
+    return {
+      recipe: base,
+      method: 'empty',
+      warning: 'קריאת צילומי מסך דורשת מפתח Claude API. הגדירו ANTHROPIC_API_KEY, או הזינו את המתכון ידנית.',
+    }
+  }
+
+  const result = await extractWithClaude('', { sourceUrl: base.source_url, images })
+
+  if (!result) {
+    return { recipe: base, method: 'empty', warning: 'קריאת התמונות נכשלה. נסו שוב, או הזינו את המתכון ידנית.' }
+  }
+
+  if (!result.isRecipe) {
+    return {
+      recipe: base,
+      method: 'empty',
+      warning: 'לא זוהה מתכון בצילומי המסך. ודאו שרואים בהם את המצרכים ואת אופן ההכנה.',
+    }
+  }
+
+  return {
+    recipe: { ...base, ...result.recipe, title: result.recipe.title || base.title } as ExtractedRecipe,
+    method: 'llm',
+    warning: null,
+  }
 }
 
 /** Pasted text — a social caption, a screenshot transcription, a WhatsApp forward. */

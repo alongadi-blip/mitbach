@@ -1,7 +1,17 @@
 'use client'
 
-import { useState } from 'react'
-import { AlertTriangle, Info, Link2, Loader2, PenLine, Sparkles, Type } from 'lucide-react'
+import { useRef, useState } from 'react'
+import {
+  AlertTriangle,
+  ImagePlus,
+  Info,
+  Link2,
+  Loader2,
+  PenLine,
+  Sparkles,
+  Type,
+  X,
+} from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -16,21 +26,77 @@ import type { MyGroup } from '@/lib/queries'
 const METHOD_NOTE: Record<ExtractionMethod, string | null> = {
   'json-ld': 'המתכון נקרא ישירות מהנתונים המובנים של האתר — בדרך כלל מדויק.',
   microdata: 'המתכון נקרא מהתגיות המובנות של האתר — בדרך כלל מדויק.',
-  llm: 'המתכון חולץ מהטקסט על ידי Claude. כדאי לעבור על המצרכים לפני השמירה.',
+  llm: 'המתכון חולץ על ידי Claude. כדאי לעבור על המצרכים לפני השמירה.',
   opengraph: null,
   empty: null,
+}
+
+const MAX_SHOTS = 8
+// Phone screenshots are tall and narrow. Capping the width keeps caption text
+// readable while each image stays a few hundred KB.
+const MAX_WIDTH = 1100
+const MAX_HEIGHT = 2600
+
+type Shot = { id: string; preview: string; data: string }
+
+/** Social sites hide the caption behind a login, so screenshots are the way in. */
+const isSocialUrl = (value: string) =>
+  /(^|\/\/|\.)(instagram\.com|facebook\.com|fb\.watch|tiktok\.com)/i.test(value)
+
+async function downscale(file: File): Promise<Shot> {
+  const bitmap = await createImageBitmap(file)
+  const scale = Math.min(1, MAX_WIDTH / bitmap.width, MAX_HEIGHT / bitmap.height)
+  const canvas = document.createElement('canvas')
+  canvas.width = Math.round(bitmap.width * scale)
+  canvas.height = Math.round(bitmap.height * scale)
+  const ctx = canvas.getContext('2d')
+  if (!ctx) throw new Error('canvas unavailable')
+  ctx.fillStyle = '#fff' // transparent PNGs would turn black as JPEG
+  ctx.fillRect(0, 0, canvas.width, canvas.height)
+  ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height)
+  bitmap.close()
+  const preview = canvas.toDataURL('image/jpeg', 0.85)
+  return { id: crypto.randomUUID(), preview, data: preview.slice(preview.indexOf(',') + 1) }
 }
 
 export function AddRecipe({ groups }: { groups: MyGroup[] }) {
   const [tab, setTab] = useState('link')
   const [url, setUrl] = useState('')
   const [text, setText] = useState('')
+  const [shots, setShots] = useState<Shot[]>([])
+  const [reading, setReading] = useState(false)
   const [pending, setPending] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [result, setResult] = useState<ExtractionResult | null>(null)
   const [draft, setDraft] = useState<RecipeDraft | null>(null)
+  const fileInput = useRef<HTMLInputElement>(null)
 
-  async function extract(body: { url: string } | { text: string }) {
+  async function addFiles(files: FileList | File[]) {
+    const images = Array.from(files).filter((file) => file.type.startsWith('image/'))
+    if (!images.length) return
+
+    const room = MAX_SHOTS - shots.length
+    if (room <= 0) {
+      setError(`אפשר לצרף עד ${MAX_SHOTS} צילומי מסך`)
+      return
+    }
+
+    setReading(true)
+    setError(null)
+    try {
+      const added = await Promise.all(images.slice(0, room).map(downscale))
+      setShots((current) => [...current, ...added].slice(0, MAX_SHOTS))
+      if (images.length > room) setError(`צורפו רק ${room} — אפשר עד ${MAX_SHOTS} צילומי מסך`)
+    } catch {
+      setError('לא הצלחנו לקרוא את אחת התמונות. נסו תמונה אחרת.')
+    } finally {
+      setReading(false)
+    }
+  }
+
+  async function extract(
+    body: { url: string } | { text: string } | { images: { data: string; mediaType: string }[]; url?: string },
+  ) {
     setPending(true)
     setError(null)
 
@@ -54,6 +120,13 @@ export function AddRecipe({ groups }: { groups: MyGroup[] }) {
     } finally {
       setPending(false)
     }
+  }
+
+  function extractShots() {
+    void extract({
+      images: shots.map((shot) => ({ data: shot.data, mediaType: 'image/jpeg' })),
+      ...(url.trim() ? { url: url.trim() } : {}),
+    })
   }
 
   if (draft) {
@@ -84,19 +157,32 @@ export function AddRecipe({ groups }: { groups: MyGroup[] }) {
     )
   }
 
+  const social = isSocialUrl(url)
+
   return (
-    <Tabs value={tab} onValueChange={setTab} className="space-y-5">
-      <TabsList className="grid w-full grid-cols-3">
+    <Tabs
+      value={tab}
+      onValueChange={(value) => {
+        setTab(value)
+        setError(null)
+      }}
+      className="space-y-5"
+    >
+      <TabsList className="grid w-full grid-cols-4">
         <TabsTrigger value="link" className="cursor-pointer gap-1.5">
-          <Link2 className="size-4" aria-hidden />
+          <Link2 className="hidden size-4 sm:block" aria-hidden />
           קישור
         </TabsTrigger>
+        <TabsTrigger value="shots" className="cursor-pointer gap-1.5">
+          <ImagePlus className="hidden size-4 sm:block" aria-hidden />
+          צילומי מסך
+        </TabsTrigger>
         <TabsTrigger value="text" className="cursor-pointer gap-1.5">
-          <Type className="size-4" aria-hidden />
+          <Type className="hidden size-4 sm:block" aria-hidden />
           טקסט חופשי
         </TabsTrigger>
         <TabsTrigger value="manual" className="cursor-pointer gap-1.5">
-          <PenLine className="size-4" aria-hidden />
+          <PenLine className="hidden size-4 sm:block" aria-hidden />
           ידני
         </TabsTrigger>
       </TabsList>
@@ -109,7 +195,7 @@ export function AddRecipe({ groups }: { groups: MyGroup[] }) {
             dir="ltr"
             className="field-ltr h-12"
             inputMode="url"
-            placeholder="https://www.instagram.com/p/…"
+            placeholder="https://…"
             value={url}
             onChange={(event) => setUrl(event.target.value)}
             onKeyDown={(event) => {
@@ -120,8 +206,110 @@ export function AddRecipe({ groups }: { groups: MyGroup[] }) {
             }}
           />
           <p className="text-xs text-muted-foreground">
-            אתרי מתכונים נקראים במלואם. באינסטגרם ובפייסבוק עדיף להעתיק את הכיתוב ולהדביק
-            בלשונית &quot;טקסט חופשי&quot;.
+            אתרי מתכונים נקראים במלואם. באינסטגרם, פייסבוק וטיקטוק הכיתוב חסום — שם עדיף
+            להעלות צילומי מסך.
+          </p>
+        </div>
+
+        {social ? (
+          <div className="flex flex-col gap-3 rounded-xl border border-accent/50 bg-accent/10 p-3.5 text-sm">
+            <p className="text-pretty">
+              זה קישור מרשת חברתית, שלא נותנת לקרוא את הכיתוב. צלמו מסך של הכיתוב והעלו אותו —
+              הקישור יישמר כמקור ותמונת הפוסט תיכנס למתכון.
+            </p>
+            <Button type="button" className="cursor-pointer self-start" onClick={() => setTab('shots')}>
+              <ImagePlus aria-hidden />
+              מעבר לצילומי מסך
+            </Button>
+          </div>
+        ) : null}
+
+        <Button
+          type="button"
+          size="lg"
+          variant={social ? 'outline' : 'default'}
+          className="w-full cursor-pointer"
+          disabled={pending || !url.trim()}
+          onClick={() => void extract({ url: url.trim() })}
+        >
+          {pending ? <Loader2 className="animate-spin" aria-hidden /> : null}
+          {pending ? 'קוראים את העמוד…' : 'חילוץ המתכון'}
+        </Button>
+      </TabsContent>
+
+      <TabsContent value="shots" className="space-y-4">
+        <div className="space-y-2">
+          <Label>צילומי מסך של הפוסט</Label>
+          <p className="text-xs text-muted-foreground">
+            צלמו את הכיתוב המלא (לחצו &quot;עוד&quot; בפוסט), גם אם זה כמה צילומים. אפשר עד{' '}
+            {MAX_SHOTS}, לפי הסדר.
+          </p>
+
+          <input
+            ref={fileInput}
+            type="file"
+            accept="image/*"
+            multiple
+            className="sr-only"
+            tabIndex={-1}
+            onChange={(event) => {
+              if (event.target.files) void addFiles(event.target.files)
+              event.target.value = ''
+            }}
+          />
+
+          <div
+            className="grid grid-cols-3 gap-2 sm:grid-cols-4"
+            onPaste={(event) => void addFiles(event.clipboardData.files)}
+          >
+            {shots.map((shot, index) => (
+              <div
+                key={shot.id}
+                className="relative aspect-[9/16] overflow-hidden rounded-lg border border-border bg-secondary/40"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element -- local data URL preview */}
+                <img src={shot.preview} alt={`צילום מסך ${index + 1}`} className="size-full object-cover object-top" />
+                <span className="absolute bottom-1 start-1 rounded-md bg-background/85 px-1.5 text-xs font-semibold">
+                  {index + 1}
+                </span>
+                <button
+                  type="button"
+                  aria-label={`הסרת צילום ${index + 1}`}
+                  className="absolute end-1 top-1 flex size-7 cursor-pointer items-center justify-center rounded-full bg-background/85 text-foreground hover:bg-destructive hover:text-white"
+                  onClick={() => setShots((current) => current.filter((s) => s.id !== shot.id))}
+                >
+                  <X className="size-4" aria-hidden />
+                </button>
+              </div>
+            ))}
+
+            {shots.length < MAX_SHOTS ? (
+              <button
+                type="button"
+                className="flex aspect-[9/16] cursor-pointer flex-col items-center justify-center gap-1.5 rounded-lg border-2 border-dashed border-border text-sm text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+                disabled={reading}
+                onClick={() => fileInput.current?.click()}
+              >
+                {reading ? <Loader2 className="size-6 animate-spin" aria-hidden /> : <ImagePlus className="size-6" aria-hidden />}
+                {shots.length ? 'עוד צילום' : 'בחירת צילומים'}
+              </button>
+            ) : null}
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="shots-url">קישור לפוסט (רשות)</Label>
+          <Input
+            id="shots-url"
+            dir="ltr"
+            className="field-ltr h-12"
+            inputMode="url"
+            placeholder="https://www.instagram.com/reel/…"
+            value={url}
+            onChange={(event) => setUrl(event.target.value)}
+          />
+          <p className="text-xs text-muted-foreground">
+            הקישור נשמר כמקור, ומשם נלקחת תמונת הפוסט.
           </p>
         </div>
 
@@ -129,11 +317,11 @@ export function AddRecipe({ groups }: { groups: MyGroup[] }) {
           type="button"
           size="lg"
           className="w-full cursor-pointer"
-          disabled={pending || !url.trim()}
-          onClick={() => void extract({ url: url.trim() })}
+          disabled={pending || reading || !shots.length}
+          onClick={extractShots}
         >
-          {pending ? <Loader2 className="animate-spin" aria-hidden /> : null}
-          {pending ? 'קוראים את העמוד…' : 'חילוץ המתכון'}
+          {pending ? <Loader2 className="animate-spin" aria-hidden /> : <Sparkles aria-hidden />}
+          {pending ? 'קוראים את הצילומים…' : 'חילוץ המתכון מהצילומים'}
         </Button>
       </TabsContent>
 
